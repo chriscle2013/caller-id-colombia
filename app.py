@@ -1,8 +1,5 @@
-# app.py - Versión completa con datos mejorados de Colombia
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import phonenumbers
@@ -21,29 +18,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==================== DATOS COMPLETOS COLOMBIA ====================
-OPERADORES_COLOMBIA_COMPLETO = {
-    "300": "Claro", "301": "Claro", "302": "Claro", "303": "Claro", "304": "Claro",
-    "305": "Claro", "310": "Claro", "311": "Claro", "312": "Claro", "313": "Claro",
-    "314": "Claro", "315": "Claro", "316": "Claro", "317": "Claro", "318": "Claro",
-    "319": "Claro", "320": "Movistar", "321": "Movistar", "322": "Movistar",
-    "323": "Movistar", "324": "Movistar", "325": "Tigo", "326": "Tigo",
-    "327": "Tigo", "328": "Tigo", "329": "Tigo", "350": "Tigo", "351": "WOM",
-    "352": "WOM", "353": "WOM", "354": "WOM", "330": "Avantel", "331": "Avantel",
-    "332": "Avantel", "340": "Virgin Mobile", "341": "Virgin Mobile", "342": "Virgin Mobile",
-    "355": "ETB Móvil", "356": "ETB Móvil", "360": "Flash", "361": "Flash",
-    "362": "Flash", "370": "Móvil Éxito", "371": "Móvil Éxito",
+# ==================== DATOS COMPLETOS DE OPERADORES COLOMBIA ====================
+OPERADORES_COLOMBIA = {
+    "300": "Claro", "301": "Claro", "302": "Claro", "303": "Claro", "304": "Claro", "305": "Claro",
+    "310": "Claro", "311": "Claro", "312": "Claro", "313": "Claro", "314": "Claro",
+    "315": "Claro", "316": "Claro", "317": "Claro", "318": "Claro", "319": "Claro",
+    "320": "Movistar", "321": "Movistar", "322": "Movistar", "323": "Movistar", "324": "Movistar",
+    "325": "Tigo", "326": "Tigo", "327": "Tigo", "328": "Tigo", "329": "Tigo", "350": "Tigo",
+    "351": "WOM", "352": "WOM", "353": "WOM", "354": "WOM",
+    "330": "Avantel", "331": "Avantel", "332": "Avantel",
+    "340": "Virgin Mobile", "341": "Virgin Mobile", "342": "Virgin Mobile",
+    "355": "ETB Móvil", "356": "ETB Móvil",
+    "360": "Flash", "361": "Flash", "362": "Flash",
+    "370": "Móvil Éxito", "371": "Móvil Éxito",
 }
 
-CIUDADES_COLOMBIA_COMPLETO = {
-    "1": {"ciudad": "Bogotá", "departamento": "Cundinamarca"},
-    "2": {"ciudad": "Cali", "departamento": "Valle del Cauca"},
-    "4": {"ciudad": "Medellín", "departamento": "Antioquia"},
-    "5": {"ciudad": "Barranquilla", "departamento": "Atlántico"},
-    "6": {"ciudad": "Pereira", "departamento": "Risaralda"},
-    "7": {"ciudad": "Bucaramanga", "departamento": "Santander"},
-    "8": {"ciudad": "Cartagena", "departamento": "Bolívar"},
-    "9": {"ciudad": "Cúcuta", "departamento": "Norte de Santander"},
+CIUDADES_COLOMBIA = {
+    "1": "Bogotá", "2": "Cali", "4": "Medellín", "5": "Barranquilla",
+    "6": "Pereira", "7": "Bucaramanga", "8": "Cartagena",
 }
 
 EMERGENCIAS_COLOMBIA = {
@@ -51,12 +43,6 @@ EMERGENCIAS_COLOMBIA = {
     "123": "Policía Nacional",
     "125": "SAMU - Emergencias médicas",
     "132": "Bomberos",
-    "144": "Línea amiga - Prevención suicidio",
-    "147": "Fiscalía - Denuncias",
-    "155": "ICBF - Bienestar familiar",
-    "159": "Tránsito - Movilidad",
-    "165": "Defensa Civil",
-    "192": "Cruz Roja",
 }
 
 # ==================== MODELOS ====================
@@ -145,50 +131,40 @@ def guardar_reporte(numero, categoria, comentario, ip):
     conn.close()
     return True
 
-# ==================== FUNCIONES MEJORADAS ====================
-def identificar_operador_detallado(numero):
+# ==================== FUNCIONES DE IDENTIFICACIÓN ====================
+def identificar_operador_colombiano(numero):
+    import re
     numero_limpio = re.sub(r'\D', '', numero)
     if numero_limpio.startswith("57"):
         numero_limpio = numero_limpio[2:]
-    
     if len(numero_limpio) == 10 and numero_limpio.startswith("3"):
         prefijo = numero_limpio[:3]
-        return OPERADORES_COLOMBIA_COMPLETO.get(prefijo)
+        return OPERADORES_COLOMBIA.get(prefijo)
     return None
 
-def identificar_ciudad_departamento(numero):
+def identificar_ciudad_colombiana(numero):
+    import re
     numero_limpio = re.sub(r'\D', '', numero)
     if numero_limpio.startswith("57"):
         numero_limpio = numero_limpio[2:]
-    
-    if len(numero_limpio) in [7, 8] and numero_limpio[0] in CIUDADES_COLOMBIA_COMPLETO:
-        ciudad_info = CIUDADES_COLOMBIA_COMPLETO[numero_limpio[0]]
-        return f"{ciudad_info['ciudad']}, {ciudad_info['departamento']}"
-    return None
+    if len(numero_limpio) in [7, 8] and numero_limpio.startswith(("6", "7", "8")):
+        primer_digito = numero_limpio[0]
+        return CIUDADES_COLOMBIA.get(primer_digito, "Colombia")
+    return "Colombia"
 
 def verificar_emergencia(numero):
+    import re
     numero_limpio = re.sub(r'\D', '', numero)
     return EMERGENCIAS_COLOMBIA.get(numero_limpio)
 
 # ==================== ENDPOINTS ====================
 @app.get("/")
 async def root():
-    return {
-        "message": "API Identificador Llamadas Colombia",
-        "version": "3.0",
-        "status": "online",
-        "features": ["identify", "report_spam", "check_spam"],
-        "colombia_data": {
-            "operadores": len(OPERADORES_COLOMBIA_COMPLETO),
-            "ciudades": len(CIUDADES_COLOMBIA_COMPLETO),
-            "emergencias": len(EMERGENCIAS_COLOMBIA)
-        }
-    }
+    return {"message": "API Identificador Llamadas Colombia", "version": "3.0", "status": "online"}
 
 @app.post("/identify")
 async def identify_number(request: PhoneRequest):
     try:
-        # Verificar emergencias primero
         emergencia = verificar_emergencia(request.phone)
         if emergencia:
             return {
@@ -209,18 +185,15 @@ async def identify_number(request: PhoneRequest):
         if not phonenumbers.is_valid_number(parsed):
             return {"valid": False, "error": "Número colombiano no válido"}
         
-        # Información básica
         carrier_name = carrier.name_for_number(parsed, "es")
         location = geocoder.description_for_number(parsed, "es")
         
-        # Mejorar con datos locales
-        operador_local = identificar_operador_detallado(request.phone)
-        ciudad_local = identificar_ciudad_departamento(request.phone)
+        operador_local = identificar_operador_colombiano(request.phone)
+        if operador_local:
+            carrier_name = operador_local
+        elif not carrier_name or carrier_name == "Desconocido":
+            carrier_name = "Operador no identificado"
         
-        carrier_name = operador_local if operador_local else (carrier_name or "Desconocido")
-        location = ciudad_local if ciudad_local else (location or "Colombia")
-        
-        # Tipo de número
         number_type = phonenumbers.number_type(parsed)
         if number_type == phonenumbers.PhoneNumberType.MOBILE:
             tipo = "Móvil"
@@ -229,12 +202,10 @@ async def identify_number(request: PhoneRequest):
         else:
             tipo = "Otro"
         
-        # Verificar spam en BD
-        spam_info = verificar_spam_bd(request.phone)
-        
-        # Formatear
         formato_internacional = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
         formato_nacional = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.NATIONAL)
+        
+        spam_info = verificar_spam_bd(request.phone)
         
         return {
             "valid": True,
@@ -242,7 +213,7 @@ async def identify_number(request: PhoneRequest):
             "national": formato_nacional,
             "type": tipo,
             "carrier": carrier_name,
-            "location": location,
+            "location": location or "Colombia",
             "spam_risk": spam_info['riesgo'] if spam_info['es_spam'] else "low",
             "reports": spam_info['reportes'],
             "is_reported": spam_info['es_spam'],
@@ -255,35 +226,11 @@ async def identify_number(request: PhoneRequest):
 @app.post("/report")
 async def report_spam(report: SpamReport, request: Request):
     client_ip = request.client.host if request.client else "unknown"
-    
     try:
         guardar_reporte(report.phone, report.category, report.comment, client_ip)
-        return {
-            "success": True,
-            "message": "Gracias por reportar. Ayudas a la comunidad colombiana."
-        }
+        return {"success": True, "message": "Reporte registrado"}
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-@app.get("/check-spam/{phone}")
-async def check_spam(phone: str):
-    resultado = verificar_spam_bd(phone)
-    return resultado
-
-@app.get("/emergencias")
-async def get_emergencias():
-    """Lista todos los números de emergencia en Colombia"""
-    return EMERGENCIAS_COLOMBIA
-
-@app.get("/estadisticas")
-async def get_estadisticas():
-    """Estadísticas de operadores en Colombia"""
-    stats = {}
-    for prefijo, operador in OPERADORES_COLOMBIA_COMPLETO.items():
-        if operador not in stats:
-            stats[operador] = 0
-        stats[operador] += 1
-    return stats
 
 @app.get("/health")
 def health_check():
