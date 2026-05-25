@@ -11,7 +11,7 @@ fullscreen = 0
 android.permissions = INTERNET, READ_PHONE_STATE, PROCESS_OUTGOING_CALLS
 android.api = 30
 android.minapi = 21
-android.ndk = 23c
+android.ndk = 28c
 android.sdk = 30
 android.accept_sdk_license = True
 
