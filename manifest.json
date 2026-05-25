@@ -1,21 +1,16 @@
 {
-  "name": "Identificador Llamadas Colombia",
-  "short_name": "ID Llamadas CO",
-  "description": "Identifica números de teléfono en Colombia y reporta spam",
+  "name": "ID Llamadas Colombia",
+  "short_name": "ID Llamadas",
+  "description": "Identifica números de teléfono en Colombia",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
   "theme_color": "#667eea",
+  "background_color": "#ffffff",
   "icons": [
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23667eea'/%3E%3Ctext x='50' y='67' font-size='50' text-anchor='middle' fill='white'%3E📱%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ]
 }
